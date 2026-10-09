@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Playground</title>
+  <style>
+    :root {
+      --bg: #fafaf9; --fg: #1c1917; --muted: #78716c;
+      --card: #ffffff; --border: #e7e5e4; --accent: #d97706;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1917; --fg: #f5f5f4; --muted: #a8a29e;
+        --card: #292524; --border: #44403c; --accent: #f59e0b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { max-width: 860px; margin: 0 auto; padding: 56px 16px; }
+    h1 { margin: 0 0 4px; font-size: 2rem; letter-spacing: -0.02em; }
+    .sub { margin: 0 0 32px; color: var(--muted); }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .filters button {
+      font: inherit; font-size: 0.875rem; cursor: pointer;
+      padding: 4px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--card); color: var(--fg);
+    }
+    .filters button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .card {
+      display: block; padding: 18px; border-radius: 12px; text-decoration: none; color: inherit;
+      background: var(--card); border: 1px solid var(--border);
+      transition: border-color .15s, transform .15s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card h2 { margin: 6px 0 6px; font-size: 1.1rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.925rem; }
+    .meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+    .tag { text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600; }
+    .empty {
+      padding: 48px 16px; text-align: center; color: var(--muted);
+      border: 1px dashed var(--border); border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Claude Playground</h1>
+    <p class="sub">Games, videos, visualizations and other experiments.</p>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <script src="projects.js"></script>
+  <script>
+    const projects = (window.PROJECTS || [])
+      .slice()
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const grid = document.getElementById("grid");
+    const filters = document.getElementById("filters");
+    let active = "all";
+
+    function render() {
+      const shown = projects.filter(p => active === "all" || p.type === active);
+      if (!shown.length) {
+        grid.innerHTML = '<div class="empty">No projects yet. Ask Claude to build something!</div>';
+        grid.style.display = "block";
+        return;
+      }
+      grid.style.display = "";
+      grid.innerHTML = "";
+      for (const p of shown) {
+        const a = document.createElement("a");
+        a.className = "card";
+        a.href = `projects/${p.slug}/`;
+        a.innerHTML = `
+          <div class="meta"><span class="tag"></span><span class="date"></span></div>
+          <h2></h2><p></p>`;
+        a.querySelector(".tag").textContent = p.type || "other";
+        a.querySelector(".date").textContent = p.date || "";
+        a.querySelector("h2").textContent = p.title;
+        a.querySelector("p").textContent = p.description || "";
+        grid.appendChild(a);
+      }
+    }
+
+    const types = [...new Set(projects.map(p => p.type || "other"))];
+    if (types.length > 1) {
+      for (const t of ["all", ...types]) {
+        const b = document.createElement("button");
+        b.textContent = t;
+        b.setAttribute("aria-pressed", t === active);
+        b.onclick = () => {
+          active = t;
+          filters.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+          render();
+        };
+        filters.appendChild(b);
+      }
+    }
+    render();
+  </script>
+</body>
+</html>
